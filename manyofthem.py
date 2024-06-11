@@ -1,49 +1,46 @@
 import math
 import itertools
+
 from PIL import Image
 import random
 
-# IMAGE_SIZE = (11100, 1200)
-IMAGE_SIZE = (1000, 1000)
-PIXEL_SPACING = 3
+# constants
+IMAGE_SIZE = (11100, 1200)
+PIXEL_SPACING = 10
 
+# get list of numbers from 0 to max with spacing between them
 def spaced_range(max, spacing):
-    return list(range(max))[0::spacing + 1]
-    
-def find_pixels(image_path, pixel_spacing):
-    source = Image.open(image_path)
-    x_values = list(range(source.size[0]))[0::pixel_spacing + 1]
-    y_values = 
-    for x in :
-        for y in list(range(source.size[1]))[0::pixel_spacing + 1]:
-            alpha = source.getpixel((x, y))[3]
-            if alpha == 255:
-                source.putpixel((x, y), (255, 0, 0))
-            elif alpha < 255 and alpha > 0:
-                source.putpixel((x, y), (0, 255, 0))
-            else:
-                source.putpixel((x, y), (0, 0, 255))
-
-    source.show()
+    return list(range(max))[0::spacing]
 
 def generate_them(image_size, pixel_spacing):
-    im = Image.new(mode = "RGB", size=IMAGE_SIZE, color=(0, 0, 255))
+    canvas = Image.new(mode = "RGBA", size=IMAGE_SIZE, color=(0, 0, 0, 0))
+    them = [Image.open("./left.png", mode = "r"), Image.open("./right.png", mode = "r")]
 
+    # create a list of all blank pixels in the image, spaced out so that we dont have to check 1.5 million pixels
     blank_pixels = list(itertools.product(spaced_range(image_size[0], pixel_spacing), spaced_range(image_size[1], pixel_spacing)))
 
-    count = 0
     total = len(blank_pixels)
 
     while blank_pixels:
-        rand_pixel = random.choice(blank_pixels)
-        blank_pixels.remove(rand_pixel)
-        im.putpixel(rand_pixel, (255, 0, 0))
-        count += 1
-        if count%1000 == 0:
-            print(count, total, sep="/")
+         # pick a random Them and rotate them
+        angle = random.randrange(-30, 30, 1)
+        one_of_them = random.choice(them).rotate(angle = angle, expand = True)
 
-    im.show()
+        # pick a random blank point and paste Them centered on that point
+        x_offset = math.floor(one_of_them.size[0] / 2)
+        y_offset = math.floor(one_of_them.size[1] / 2)
+        rand_pixel = random.choice(blank_pixels)
+        top_left = (rand_pixel[0] - x_offset, rand_pixel[1] - y_offset)
+        canvas.paste(one_of_them, top_left, one_of_them)
+
+        # check all of the possible points in that range to see if we can mark them as not blank
+        for x in range(top_left[0] + x_offset % pixel_spacing, top_left[0] + x_offset % pixel_spacing + one_of_them.size[0])[0::pixel_spacing]:
+            for y in range(top_left[1] + y_offset % pixel_spacing, top_left[1] + y_offset % pixel_spacing + one_of_them.size[1])[0::pixel_spacing]:
+                if (x >= 0 and x < canvas.size[0] and y >= 0 and y < canvas.size[1] and canvas.getpixel((x, y))[3] == 255 and (x,y) in blank_pixels):
+                    blank_pixels.remove((x, y))
+        print(f"{round(100 - 100 * len(blank_pixels) / total, 1)}% ", end="\r")
+
+    canvas.show()
 
 if __name__ == "__main__":
-    # generate_them(IMAGE_SIZE, PIXEL_SPACING)
-    find_pixels("./left.png", PIXEL_SPACING)
+    generate_them(IMAGE_SIZE, PIXEL_SPACING)
