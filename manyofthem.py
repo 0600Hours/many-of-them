@@ -40,7 +40,7 @@ def generate_them(image_size, pixel_spacing):
                     blank_pixels.remove((x, y))
         print(f"{round(100 - 100 * len(blank_pixels) / total, 1)}% ", end="\r")
 
-    canvas.show()
+    canvas.save("out.png")
 
 if __name__ == "__main__":
     generate_them(IMAGE_SIZE, PIXEL_SPACING)
